@@ -10,6 +10,7 @@ float spa = 0.0;
 boolean spac = false;
 boolean spacD = false;
 boolean con = false;
+boolean sup = false;
 float conX = 0.0;
 float conY = 0.0;
 float rotX = 0.0;
@@ -33,6 +34,7 @@ void draw() {
   shader.set("iSide", sid);
   shader.set("iUp", spa);
   shader.set("iFractal", conX, conY);
+  shader.set("iMSAA", sup);
   shader(shader);
   
   rect(0, 0, width, height);
@@ -79,7 +81,7 @@ void draw() {
   
   }
   
-  println( frameRate );
+  //println( frameRate );
   
 }
 
@@ -144,6 +146,32 @@ void keyPressed()
     }
   
   } 
+  
+  if ( sup == false )
+  {
+
+    if ( key == 'm' || key == 'M' )
+    {
+
+      sup = true;
+      println( str( sup ) );
+      
+    }
+    
+  } 
+  
+  else if ( sup == true )
+  {
+
+    if ( key == 'm' || key == 'M' )
+    {
+
+      sup = false;
+      println( str( sup ) );
+      
+    }
+    
+  }
 
 }
 
@@ -183,7 +211,7 @@ void keyReleased()
   
       spac = false;
   
-    }    
+    }   
     
     if( key == CODED )
     {

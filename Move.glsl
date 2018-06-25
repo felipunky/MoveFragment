@@ -9,10 +9,16 @@ uniform float iForward;
 uniform float iSide;
 uniform float iUp;
 uniform vec2 iFractal;
+uniform bool iMSAA;
 
-#define EPS 0.0002
-#define STEPS  256
-#define FAR   50.0
+#define EPS      0.0002
+#define STEPS       256
+#define FAR        50.0
+#define PI acos( -1.0 )
+#define TPI    PI * 2.0
+
+const float f = 1.0;
+const int samples = 2;
 
 mat2 rot( float a )
 {
@@ -159,9 +165,11 @@ float softShadows( in vec3 ro, in vec3 rd )
     
 }
 
-vec3 shad( vec3 p, vec3 rd )
+vec3 shad( vec3 ro, vec3 rd )
 {
     
+    float d = 0.0, t = ray( ro, rd, d );
+    vec3 p = ro + rd * t;
     vec3 n = norm( p );
     vec3 lig = normalize( vec3( 1.0, 0.8, 0.6 ) );
     vec3 blig = vec3( -lig.x, -lig.y, -lig.z );
@@ -195,25 +203,54 @@ void main( )
     
     vec2 uv = ( -iResolution.xy + 2.0 * gl_FragCoord.xy ) / iResolution.y;
     
-    vec2 mou = iMouse;
+    vec2 mou = vec2( -iMouse.x, iMouse.y );
     
     vec3 ro = vec3( iSide, iUp, -iForward );
     vec3 rd = normalize( vec3( uv, -1.0 ) );
     
-    ro.zy *= rot( -mou.x );
+    ro.zy *= rot( mou.x );
     ro.xz *= rot( mou.y );
-    
-    rd.zy *= rot( -mou.x );
+
+    rd.zy *= rot( mou.x );
     rd.xz *= rot( mou.y );
-    
+
     vec3 tra = vec3( 0.0 );
     
     float d = 0.0, t = ray( ro, rd, d );
     
     vec3 p = ro + rd * t;
     
-    vec3 col = d < EPS ? shad( p, rd ) : vec3( 0.0 );
+    vec3 col = vec3( 0 );
     
-    // Output to screen
-    gl_FragColor = vec4(col,1.0);
+    if( iMSAA == true )
+    {
+        
+        vec3 ww = normalize( ro );
+        vec3 uu = normalize( cross( vec3( 0.0, 1.0, 0.0 ), ww ) );
+        vec3 vv = normalize( cross( ww, uu ) );
+        for (int x = - samples / 2; x < samples / 2; x++) {
+            for (int y = - samples / 2; y < samples / 2; y++) {
+                vec3 rd = normalize(
+                                    (float(x) / iResolution.y - uv.x)*uu +
+                                    (float(y) / iResolution.y + uv.y)*vv +
+                                    f*ww );
+                t = ray(ro, rd, d);
+                col += d < EPS ? shad( ro, rd ) : mix( vec3( 1.0 ), vec3( 0.4, 0.2, 0.1 ), uv.y );
+            }
+        }
+        
+        gl_FragColor = vec4( col / float(samples * samples), 1.0 );
+        
+    }
+    
+    else if( iMSAA == false )
+    {
+        
+        col = d < EPS ? shad( ro, rd ) : mix( vec3( 1.0 ), vec3( 0.4, 0.2, 0.1 ), uv.y );
+        
+        // Output to screen
+        gl_FragColor = vec4(col,1.0);
+        
+    }
+    
 }
